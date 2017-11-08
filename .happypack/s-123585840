@@ -1,0 +1,128 @@
+'use strict';
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.setStatusAction = undefined;
+
+var _superagentUse = require('superagent-use');
+
+var _superagentUse2 = _interopRequireDefault(_superagentUse);
+
+var _superagent = require('superagent');
+
+var _superagent2 = _interopRequireDefault(_superagent);
+
+var _lodash = require('lodash');
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+var superagent = (0, _superagentUse2.default)(_superagent2.default);
+
+var statusActions = {};
+
+var setStatusAction = exports.setStatusAction = function setStatusAction(status, action) {
+  var timeout = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 0;
+
+  statusActions[status] = { timeout: timeout, action: action };
+};
+
+function endPromise(req) {
+  var _Promise = Promise;
+
+  return new _Promise(function (resolve, reject) {
+    req.end(function (err, res) {
+      if (res.status) {
+        var statusAction = statusActions[res.status];
+        if (!_lodash2.default.isEmpty(statusAction)) {
+          if (statusAction.timeout > 0) {
+            setTimeout(statusAction.action, statusAction.timeout);
+          } else {
+            statusAction.action();
+          }
+        }
+      }
+      var error = err || res.error;
+      if (error) {
+        if (res) {
+          error.status = res.status;
+          if (res.text !== undefined && res.text !== '') {
+            error.message = res.text;
+          }
+        }
+        reject(error);
+      } else {
+        resolve(res);
+      }
+    });
+  });
+}
+
+function then() {
+  var promise = endPromise(this);
+  return promise.then.apply(promise, arguments);
+}
+
+function _catch() {
+  var promise = endPromise(this);
+  return promise.catch.apply(promise, arguments);
+}
+
+/**
+ * Adds req.then and req.catch methods
+ * @param {Object} req
+ * @return {Object} req
+ */
+function superagentPromisePlugin(req) {
+  req.then = then;
+  req.catch = _catch;
+  return req;
+}
+
+/**
+ * Patches superagent so that every request has req.then and req.catch methods
+ * @param {Object} superagent
+ * @return {Object} superagent
+ */
+superagentPromisePlugin.patch = function patch(sa) {
+  sa.Request.prototype.then = then;
+  sa.Request.prototype.catch = _catch;
+  return sa;
+};
+
+superagent.use(superagentPromisePlugin);
+
+exports.default = superagent;
+
+// import fetch from 'dva/fetch';
+
+// function parseJSON(response) {
+//   return response.json();
+// }
+
+// function checkStatus(response) {
+//   if (response.status >= 200 && response.status < 300) {
+//     return response;
+//   }
+
+//   const error = new Error(response.statusText);
+//   error.response = response;
+//   throw error;
+// }
+
+// /**
+//  * Requests a URL, returning a promise.
+//  *
+//  * @param  {string} url       The URL we want to request
+//  * @param  {object} [options] The options we want to pass to "fetch"
+//  * @return {object}           An object containing either "data" or "err"
+//  */
+// export default function request(url, options) {
+//   return fetch(url, options)
+//     .then(checkStatus)
+//     .then(parseJSON)
+//     .then(data => ({ data }))
+//     .catch(err => ({ err }));
+// }
