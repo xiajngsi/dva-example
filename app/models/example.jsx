@@ -5,6 +5,15 @@ export default {
   state: {},
   subscriptions: {
     setup({ dispatch, history }) {  // eslint-disable-line
+      // return history.listen(({ pathname, search }) => {
+      //   const query = queryString.parse(search);
+      //   if (pathname === '/users') {
+      //     if (pathname === '/users') {
+      //       dispatch({ type: 'fetch', payload: query });
+      //       dispatch({ type: 'fetch', payload: query });
+      //     }
+      //   }
+      // }
     },
   },
   effects: {

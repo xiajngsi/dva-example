@@ -16,13 +16,20 @@
 // }
 
 import React from 'react'
-import { Router, Route } from 'dva/router'
-import IndexPage from './routes/IndexPage'
+import { Router, Route, Switch } from 'dva/router'
+import dynamic from 'dva/dynamic'
+// import IndexPage from './routes/IndexPage'
 
-const RouterConfig = ({ history }) => {
+const RouterConfig = ({ history, app }) => {
+  const IndexPage = dynamic({
+  	app,
+    component: import('./routes/IndexPage'),
+  })
   return (
     <Router history={history}>
-      <Route path='/' component={IndexPage} />
+      <Switch>
+        <Route exact path='/' component={IndexPage} />
+      </Switch>
     </Router>
   )
 }
